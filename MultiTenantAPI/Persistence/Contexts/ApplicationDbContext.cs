@@ -28,7 +28,6 @@ namespace multiTenantApp.Persistence.Contexts
             _currentTenantService = currentTenantService;
             CurrentTenantId = _currentTenantService.TenantId;
             CurrentTenantConnectionString = _currentTenantService.ConnectionString;
-
         }
 
         // Application DbSets -- create for entity types to be applied to all databases

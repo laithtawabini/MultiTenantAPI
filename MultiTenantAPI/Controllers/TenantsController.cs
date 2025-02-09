@@ -22,5 +22,20 @@ namespace multiTenantApp.Controllers
             var result = _tenantService.CreateTenant(request);
             return Ok(result);
         }
+
+        [HttpGet]
+        public IActionResult Get()
+        {
+            var result = _tenantService.GetAll();
+            return Ok(result);
+        }
+
+        [HttpDelete]
+        [Route("{tenantId}")]
+        public IActionResult Delete(string tenantId)
+        {
+            _tenantService.DeleteTenant(tenantId);
+            return Ok();
+        }
     }
 }

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using multiTenantApp.Middleware;
 using multiTenantApp.Persistence.Contexts;
 using multiTenantApp.Persistence.Extensions;
@@ -22,6 +23,7 @@ builder.Services.AddScoped<ICurrentTenantService, CurrentTenantService>();
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddDbContext<BaseDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddAndMigrateTenantDatabases(builder.Configuration);
+builder.Services.AddCors();
 
 // CRUD services with transient lifetime
 builder.Services.AddTransient<ITenantService, TenantService>();
@@ -30,6 +32,14 @@ builder.Services.AddTransient<IProductService, ProductService>();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseCors(opt =>
+{
+    opt.WithOrigins("http://localhost:4200")
+       .AllowAnyMethod()
+       .AllowAnyHeader()
+       .AllowCredentials(); // Allow cookies/auth headers if needed
+});
 
 app.UseSwagger();
 app.UseSwaggerUI();

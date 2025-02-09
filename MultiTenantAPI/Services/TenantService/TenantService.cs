@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using Azure.Core;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using multiTenantApp.Models;
 using multiTenantApp.Persistence.Contexts;
@@ -22,13 +23,14 @@ namespace multiTenantApp.Services.TenantService
 
         public Tenant CreateTenant(CreateTenantRequest request)
         {
-
+            // Building the name of newly created DB
             string connectionString = _configuration.GetConnectionString("DefaultConnection");
             SqlConnectionStringBuilder builder = new(connectionString);
             string mainDatabaseName = builder.InitialCatalog; // retrieve the database name
             string tenantDbName = mainDatabaseName + "-" + request.Id;
             builder.InitialCatalog = tenantDbName; // set new database name
             string modifiedConnectionString = builder.ConnectionString; // create new connection string
+            // -------------------------------------------
 
             Tenant tenant = new() // create a new tenant entity
             {
@@ -62,6 +64,33 @@ namespace multiTenantApp.Services.TenantService
             }
 
             return tenant;
+        }
+
+        public void DeleteTenant(string tenantId)
+        {
+            string connectionString = _configuration.GetConnectionString("DefaultConnection");
+            SqlConnectionStringBuilder builder = new(connectionString);
+            string mainDatabaseName = builder.InitialCatalog; // retrieve the database name
+            string tenantDbName = mainDatabaseName + "-" + tenantId;
+            builder.InitialCatalog = tenantDbName; // set new database name
+            string modifiedConnectionString = builder.ConnectionString; // create new connection string
+
+            using IServiceScope scopeTenant = _serviceProvider.CreateScope();
+            ApplicationDbContext dbContext = scopeTenant.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            dbContext.Database.SetConnectionString(modifiedConnectionString);
+            dbContext.Database.EnsureDeleted();
+
+            var tenantToRemove = _baseDbContext.Tenants.FirstOrDefault(t => t.Id == tenantId);
+            if (tenantToRemove != null)
+            {
+                _baseDbContext.Tenants.Remove(tenantToRemove);
+                _baseDbContext.SaveChanges();
+            }
+        }
+
+        public List<Tenant> GetAll()
+        {
+            return _baseDbContext.Tenants.ToList();
         }
     }
 }
